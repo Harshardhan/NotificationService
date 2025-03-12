@@ -11,7 +11,7 @@ public interface NotificationService {
     Notification sendNotification(Notification notification)throws NotificationException;
 
     // Send a notification based on order details
-    Notification sendOrderNotification(Long orderId, Notificationtype type, String message)throws NotificationNotFoundException, NotificationException, MessagingException;
+    Notification sendOrderNotification(Long orderId, NotificationType type, String message)throws NotificationNotFoundException, NotificationException, MessagingException;
 
     // Get all notifications
     List<Notification> getAllNotifications();

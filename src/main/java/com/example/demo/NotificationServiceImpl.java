@@ -6,11 +6,9 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
@@ -19,28 +17,34 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class NotificationServiceImpl implements NotificationService {
 
-    @Autowired
-    private NotificationRepository notificationRepository;
-
-    @Autowired
-    private JavaMailSender mailSender;
-
+    private final NotificationRepository notificationRepository;
+    private final JavaMailSender mailSender;
     private static final Logger logger = LoggerFactory.getLogger(NotificationServiceImpl.class);
+
+    public NotificationServiceImpl(NotificationRepository notificationRepository, JavaMailSender mailSender) {
+        this.notificationRepository = notificationRepository;
+        this.mailSender = mailSender;
+    }
 
     @Override
     public Notification sendNotification(Notification notification) throws NotificationException {
         logger.info("Attempting to send notification to customer ID: {}", notification.getCustomerId());
 
         try {
-            // Save notification to DB
-            notification.setSentAt(LocalDateTime.now());
-            notification.setSent(false);
-            Notification savedNotification = notificationRepository.save(notification);
+            Notification savedNotification = Notification.builder()
+                    .customerId(notification.getCustomerId())
+                    .message(notification.getMessage())
+                    .email(notification.getEmail())
+                    .type(notification.getType())
+                    .sentAt(LocalDateTime.now())
+                    .sent(false)
+                    .build();
 
-            // Sending email
-            if (notification.getType() == Notificationtype.EMAIL) {
+            savedNotification = notificationRepository.save(savedNotification);
+
+            if (notification.getType() == NotificationType.EMAIL) {
                 sendEmail(notification.getEmail(), "Order Notification", notification.getMessage());
-                savedNotification.setSent(true);
+                savedNotification = savedNotification.toBuilder().sent(true).build();
             }
 
             logger.info("Notification successfully sent to customer ID: {}", notification.getCustomerId());
@@ -52,27 +56,30 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Notification sendOrderNotification(Long orderId, Notificationtype type, String message)
-            throws NotificationNotFoundException, NotificationException, MessagingException {
+    public Notification sendOrderNotification(Long orderId, NotificationType type, String message)
+            throws NotificationNotFoundException, NotificationException {
         logger.info("Sending order notification for Order ID: {}", orderId);
 
-        Optional<Notification> optionalNotification = notificationRepository.findByOrderId(orderId);
-        if (!optionalNotification.isPresent()) {
-            logger.warn("No notification found for Order ID: {}", orderId);
-            throw new NotificationNotFoundException("Notification not found for Order ID: " + orderId);
+        Notification notification = notificationRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new NotificationNotFoundException("Notification not found for Order ID: " + orderId));
+
+        Notification updatedNotification = notification.toBuilder()
+                .message(message)
+                .sentAt(LocalDateTime.now())
+                .sent(false)
+                .build();
+
+        try {
+            if (type == NotificationType.EMAIL) {
+                sendEmail(notification.getEmail(), "Order Update", message);
+                updatedNotification = updatedNotification.toBuilder().sent(true).build();
+            }
+        } catch (MessagingException e) {
+            logger.error("Failed to send email notification: {}", e.getMessage());
+            throw new NotificationException("Error sending email notification", e);
         }
 
-        Notification notification = optionalNotification.get();
-        notification.setMessage(message);
-        notification.setSentAt(LocalDateTime.now());
-        notification.setSent(false);
-
-        if (type == Notificationtype.EMAIL) {
-            sendEmail(notification.getEmail(), "Order Update", message);
-            notification.setSent(true);
-        }
-
-        return notificationRepository.save(notification);
+        return notificationRepository.save(updatedNotification);
     }
 
     @Override
@@ -95,30 +102,35 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public Optional<Notification> getNotificationsByOrder(Long orderId) throws NotificationNotFoundException {
         logger.info("Fetching notifications for Order ID: {}", orderId);
-        Optional<Notification> notifications = notificationRepository.findByOrderId(orderId);
-        if (notifications.isEmpty()) {
+
+        Optional<Notification> notificationOptional = notificationRepository.findByOrderId(orderId);
+
+        if (notificationOptional.isEmpty()) {
             logger.warn("No notifications found for Order ID: {}", orderId);
             throw new NotificationNotFoundException("No notifications found for Order ID: " + orderId);
         }
-        return notifications;
-    }
 
+        return notificationOptional;
+    }
     @Override
     public void markNotificationAsSent(Long notificationId) throws NotificationNotFoundException {
         logger.info("Marking notification ID {} as sent", notificationId);
-        Optional<Notification> optionalNotification = notificationRepository.findById(notificationId);
-        if (!optionalNotification.isPresent()) {
-            logger.warn("Notification ID {} not found", notificationId);
-            throw new NotificationNotFoundException("Notification ID not found: " + notificationId);
-        }
 
-        Notification notification = optionalNotification.get();
-        notification.setSent(true);
-        notificationRepository.save(notification);
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationNotFoundException("Notification ID not found: " + notificationId));
+
+        Notification updatedNotification = notification.toBuilder().sent(true).build();
+        notificationRepository.save(updatedNotification);
+
         logger.info("Notification ID {} marked as sent", notificationId);
     }
 
     private void sendEmail(String to, String subject, String text) throws MessagingException {
+        if (to == null || to.isEmpty()) {
+            logger.error("Email address is null or empty");
+            throw new MessagingException("Email address is null or empty");
+        }
+
         logger.info("Sending email to: {}", to);
 
         MimeMessage message = mailSender.createMimeMessage();

@@ -39,7 +39,7 @@ public class NotificationController {
     @PostMapping("/send-order/{orderId}")
     public ResponseEntity<?> sendOrderNotification(
             @PathVariable Long orderId,
-            @RequestParam Notificationtype type,
+            @RequestParam NotificationType type,
             @RequestParam String message) throws MessagingException {
         logger.info("Received request to send order notification for Order ID: {}", orderId);
         try {
