@@ -20,10 +20,15 @@ public class NotificationController {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationController.class);
 
+    
+    private final NotificationService notificationService;
+    
     @Autowired
-    private NotificationService notificationService;
+	public NotificationController(NotificationService notificationService) {
+		this.notificationService = notificationService;
+	}
 
-    @PostMapping("/send")
+	@PostMapping("/send")
     public ResponseEntity<?> sendNotification(@RequestBody Notification notification) {
         logger.info("Received request to send notification to customer ID: {}", notification.getCustomerId());
         try {
