@@ -2,6 +2,7 @@ package com.example.demo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +18,11 @@ public class NotificationController {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationController.class);
 
+    private static final String NOTIFICATION_FETCH_ERROR = "Failed to fetch notifications: {}";
+
     private final NotificationService notificationService;
 
+    @Autowired
     public NotificationController(NotificationService notificationService) {
         this.notificationService = notificationService;
     }
@@ -63,7 +67,7 @@ public class NotificationController {
             logger.info("Fetched {} notifications", notifications.size());
             return ResponseEntity.ok(notifications);
         } catch (Exception e) {
-            logger.error("Failed to fetch notifications: {}", e.getMessage());
+        	logger.error(NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
