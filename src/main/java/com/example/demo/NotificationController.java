@@ -54,7 +54,7 @@ public class NotificationController {
             logger.error("Notification not found for Order ID: {}", orderId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (NotificationException e) {
-            logger.error("Failed to send order notification: {}", e.getMessage());
+        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -83,7 +83,7 @@ public class NotificationController {
             logger.error("No notifications found for Customer ID: {}", customerId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (Exception e) {
-            logger.error("Failed to fetch notifications: {}", e.getMessage());
+        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -99,7 +99,7 @@ public class NotificationController {
             logger.error("No notifications found for Order ID: {}", orderId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Optional.empty());
         } catch (Exception e) {
-            logger.error("Failed to fetch notifications: {}", e.getMessage());
+        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Optional.empty());
         }
     }
@@ -115,7 +115,7 @@ public class NotificationController {
             logger.error("Notification ID {} not found", notificationId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
-            logger.error("Failed to mark notification as sent: {}", e.getMessage());
+        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
