@@ -35,7 +35,7 @@ public class NotificationController {
             logger.info("Notification sent successfully to customer ID: {}", notification.getCustomerId());
             return ResponseEntity.ok(sentNotification);
         } catch (NotificationException e) {
-            logger.error("Failed to send notification: {}", e.getMessage());
+        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
