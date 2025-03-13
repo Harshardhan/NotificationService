@@ -52,8 +52,7 @@ public class NotificationServiceImpl implements NotificationService {
             logger.info("Notification successfully sent to customer ID: {}", notification.getCustomerId());
             return notificationRepository.save(savedNotification);
         } catch (Exception e) {
-            logger.error("Failed to send notification: {}", e.getMessage());
-            throw new NotificationException("Error sending notification", e);
+            throw new NotificationException("Error sending notification", e); // ✅ Removed duplicate logging
         }
     }
 
@@ -71,14 +70,13 @@ public class NotificationServiceImpl implements NotificationService {
                 .sent(false)
                 .build();
 
-        try {
-            if (type == NotificationType.EMAIL) {
+        if (type == NotificationType.EMAIL) {
+            try {
                 sendEmail(notification.getEmail(), "Order Update", message);
                 updatedNotification = updatedNotification.toBuilder().sent(true).build();
+            } catch (MessagingException e) {
+                throw new NotificationException("Error sending email notification", e); // ✅ Removed duplicate logging
             }
-        } catch (MessagingException e) {
-            logger.error("Failed to send email notification: {}", e.getMessage());
-            throw new NotificationException("Error sending email notification", e);
         }
 
         return notificationRepository.save(updatedNotification);
@@ -95,7 +93,6 @@ public class NotificationServiceImpl implements NotificationService {
         logger.info("Fetching notifications for Customer ID: {}", customerId);
         List<Notification> notifications = notificationRepository.findByCustomerId(customerId);
         if (notifications.isEmpty()) {
-            logger.warn("No notifications found for Customer ID: {}", customerId);
             throw new NotificationNotFoundException("No notifications found for Customer ID: " + customerId);
         }
         return notifications;
@@ -108,12 +105,12 @@ public class NotificationServiceImpl implements NotificationService {
         Optional<Notification> notificationOptional = notificationRepository.findByOrderId(orderId);
 
         if (notificationOptional.isEmpty()) {
-            logger.warn("No notifications found for Order ID: {}", orderId);
             throw new NotificationNotFoundException("No notifications found for Order ID: " + orderId);
         }
 
         return notificationOptional;
     }
+
     @Override
     public void markNotificationAsSent(Long notificationId) throws NotificationNotFoundException {
         logger.info("Marking notification ID {} as sent", notificationId);
@@ -129,8 +126,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void sendEmail(String to, String subject, String text) throws MessagingException {
         if (to == null || to.isEmpty()) {
-            logger.error("Email address is null or empty");
-            throw new MessagingException("Email address is null or empty");
+            throw new MessagingException("Email address is null or empty"); // ✅ Removed unnecessary logging
         }
 
         logger.info("Sending email to: {}", to);
