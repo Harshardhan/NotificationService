@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/notifications")
+@RequestMapping("/api/notifications")
 public class NotificationController {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationController.class);
@@ -28,14 +28,14 @@ public class NotificationController {
     }
 
     @PostMapping("/send")
-    public ResponseEntity<Notification> sendNotification(@RequestBody Notification notification) {
+    public ResponseEntity<Notification> sendNotification(@RequestBody Notification notification) throws MessagingException {
         logger.info("Received request to send notification to customer ID: {}", notification.getCustomerId());
         try {
             Notification sentNotification = notificationService.sendNotification(notification);
             logger.info("Notification sent successfully to customer ID: {}", notification.getCustomerId());
             return ResponseEntity.ok(sentNotification);
         } catch (NotificationException e) {
-        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
+        	logger.error(NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -54,7 +54,7 @@ public class NotificationController {
             logger.error("Notification not found for Order ID: {}", orderId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         } catch (NotificationException e) {
-        	logger.error(NotificationConstants.NOTIFICATION_FETCH_ERROR, e.getMessage());
+        	logger.error(NOTIFICATION_FETCH_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

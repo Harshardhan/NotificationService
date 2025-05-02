@@ -8,7 +8,7 @@ import jakarta.mail.MessagingException;
 public interface NotificationService {
 
     // Send a notification (Email, SMS, Push)
-    Notification sendNotification(Notification notification)throws NotificationException;
+    Notification sendNotification(Notification notification)throws NotificationException, MessagingException;
 
     // Send a notification based on order details
     Notification sendOrderNotification(Long orderId, NotificationType type, String message)throws NotificationNotFoundException, NotificationException, MessagingException;

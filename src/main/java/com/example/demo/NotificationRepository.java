@@ -18,7 +18,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findByOrderReference(String orderReference);
 
     // Find all notifications that are not yet sent
-    List<Notification> findByIsSentFalse();
+    List<Notification> findBySentFalse();
 
     // Find all notifications of a specific type (EMAIL, SMS, PUSH_NOTIFICATION)
     List<Notification> findByType(NotificationType type);
