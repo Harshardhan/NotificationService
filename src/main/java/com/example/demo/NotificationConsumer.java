@@ -1,37 +1,50 @@
 package com.example.demo;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class NotificationConsumer {
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private NotificationService notificationService;
 
-    @KafkaListener(topics = "${kafka.topic}", groupId = "notification-service")
-    public void listen(String message) {
+    private static final Logger logger = LoggerFactory.getLogger(NotificationConsumer.class);
+
+    @KafkaListener(
+        topics = "notification-topic",
+        groupId = "notification-service",
+        containerFactory = "notificationKafkaListenerContainerFactory"
+    )
+    public void listen(NotificationRequest request) {
+    	logger.info("📩 Received Notification for customerId: {}", request.getCustomerId());
+    	if (request.getCustomerId() == null || request.getEmail() == null) {
+    	    logger.warn("❗ Missing required fields in NotificationRequest: {}", request);
+    	    return;
+    	}
+
         try {
-            Order order = objectMapper.readValue(message, Order.class);
-            System.out.println("📩 Received Order with customerId: " + order.getCustomerId());
+            Notification notification = Notification.builder()
+                    .customerId(request.getCustomerId())
+                    .orderId(request.getOrderId())
+                    .orderReference(request.getOrderReference())
+                    .email(request.getEmail())
+                    .message(request.getMessage())
+                    .address(request.getAddress())
+                    .paymentMethod(request.getPaymentMethod())
+                    .price(request.getPrice())
+                    .quantity(request.getQuantity())
+                    .type(request.getType())
+                    .build();
 
-            // Trigger actual notification logic using order object
-            // For example: sendEmail(order.getCustomerId(), order.getOrderStatus());
+            notificationService.sendNotification(notification);
 
         } catch (Exception e) {
-            System.err.println("❌ Failed to parse order JSON: " + e.getMessage());
+        	logger.error("❌ Failed to process notification: {}", e.getMessage(), e);
         }
-    }
-    
-    @KafkaListener(topics = "${kafka.topic}", groupId = "notification-service", containerFactory = "kafkaListenerContainerFactory")
-    public void listen(Order order) {
-        System.out.println("📩 Received Order with customerId: " + order.getCustomerId());
-
-        // Trigger actual notification logic
-        // e.g., sendEmail(order.getEmail(), order.getOrderReference());
     }
 
 }

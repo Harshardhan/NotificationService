@@ -1,19 +1,30 @@
-# Stage 1: Build the application
+# ===================== Stage 1: Build the application =====================
 FROM maven:3.9.6-eclipse-temurin-17 AS build
 
+# Set the working directory to project root
 WORKDIR /app
 
+# Copy only required files first for caching dependencies
 COPY . .
 
-RUN mvn clean install -DskipTests 
+# Pre-fetch dependencies
+RUN ./mvnw dependency:go-offline -B
 
-# Stage 2: Run the application
+# Copy the entire project
+COPY . .
+
+RUN ./mvnw clean package -pl NotificationService -am -DskipTests
+
+# ===================== Stage 2: Run the application =====================
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
+
+# Create logs directory
 RUN mkdir -p /app/logs
 
-COPY --from=build /app/NotificationService/target/NotificationService-0.0.1-SNAPSHOT.jar NotificationService.jar
+# Copy the built JAR
+COPY --from=build /app/NotificationService/target/*.jar NotificationService.jar
 
 EXPOSE 8085
 
