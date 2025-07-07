@@ -42,7 +42,7 @@ public class NotificationController {
 
     @PostMapping("/send-order/{orderId}")
     public ResponseEntity<Notification> sendOrderNotification(
-            @PathVariable Long orderId,
+            @PathVariable("orderId") Long orderId,
             @RequestParam NotificationType type,
             @RequestParam String message) throws MessagingException {
         logger.info("Received request to send order notification for Order ID: {}", orderId);
@@ -73,7 +73,7 @@ public class NotificationController {
     }
 
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<Notification>> getNotificationsByCustomer(@PathVariable Long customerId) {
+    public ResponseEntity<List<Notification>> getNotificationsByCustomer(@PathVariable("customerId") Long customerId) {
         logger.info("Received request to fetch notifications for Customer ID: {}", customerId);
         try {
             List<Notification> notifications = notificationService.getNotificationsByCustomer(customerId);
@@ -89,7 +89,7 @@ public class NotificationController {
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<Optional<Notification>> getNotificationsByOrder(@PathVariable Long orderId) {
+    public ResponseEntity<Optional<Notification>> getNotificationsByOrder(@PathVariable("orderId") Long orderId) {
         logger.info("Received request to fetch notifications for Order ID: {}", orderId);
         try {
             Optional<Notification> notification = notificationService.getNotificationsByOrder(orderId);
@@ -105,7 +105,7 @@ public class NotificationController {
     }
 
     @PutMapping("/mark-sent/{notificationId}")
-    public ResponseEntity<Void> markNotificationAsSent(@PathVariable Long notificationId) {
+    public ResponseEntity<Void> markNotificationAsSent(@PathVariable("notificationId") Long notificationId) {
         logger.info("Received request to mark notification ID {} as sent", notificationId);
         try {
             notificationService.markNotificationAsSent(notificationId);

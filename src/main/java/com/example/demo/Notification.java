@@ -30,6 +30,7 @@ public class Notification {
     private Long id;
     private Long customerId;
     private Long orderId;
+    private Long productId;
     private String message;
 	private String productName;
 	private String description;

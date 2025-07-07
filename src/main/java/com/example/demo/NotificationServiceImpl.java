@@ -51,6 +51,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Bulkhead(name = "notificationService", type = Bulkhead.Type.THREADPOOL)
     public Notification sendNotification(Notification notification) throws NotificationException, MessagingException {
         logger.info("🚀 Starting notification process for customer ID: {}", notification.getCustomerId());
+        if (notification.getProductId() == null) {
+            logger.warn("⚠️ Product ID is null in notification, unable to fetch product details.");
+        }
+
 
         // Validate email
         validateEmail(notification.getEmail());
@@ -58,10 +62,12 @@ public class NotificationServiceImpl implements NotificationService {
         // Fetch product details (optional fallback)
         String productName = null;
         try {
-            Product product = productServiceClient.getProductDetails(notification.getId());
+            logger.debug("🔍 Fetching product with ID: {}", notification.getProductId());
+            Product product = productServiceClient.getProductDetails(notification.getProductId());
             productName = product != null ? product.getProductName() : "Unknown Product";
         } catch (Exception e) {
             logger.warn("⚠️ Failed to fetch product details: {}", e.getMessage());
+
         }
 
         // Fetch order details (optional)
@@ -77,6 +83,7 @@ public class NotificationServiceImpl implements NotificationService {
                 Notification.builder()
                         .customerId(notification.getCustomerId())
                         .orderId(notification.getOrderId())
+                        .productId(notification.getProductId())
                         .orderReference(notification.getOrderReference())
                         .message(notification.getMessage())
                         .email(notification.getEmail())
@@ -94,8 +101,29 @@ public class NotificationServiceImpl implements NotificationService {
         // Send Email
         if (notification.getType() == NotificationType.EMAIL) {
             logger.info("📧 Preparing to send email to {}", notification.getEmail());
+
             try {
-                sendEmail(notification.getEmail(), "Order Notification", notification.getMessage());
+            	String emailBody = String.format(
+            		    "Dear Customer,\n\n" +
+            		    "Your order has been placed successfully! 🧾\n\n" +
+            		    "Order Details:\n" +
+            		    "Order ID: %s\n" +
+            		    "Order Reference: %s\n" +
+            		    "Product: %s\n" +
+            		    "Quantity: %d\n" +
+            		    "Price: ₹%.2f\n" +
+            		    "Payment Method: %s\n" +
+            		    "Shipping Address: %s\n\n" +
+            		    "Thank you for shopping with us!\n",
+            		    notification.getOrderId(),
+            		    notification.getOrderReference(),
+            		    productName != null ? productName : "N/A",  // <-- use this instead
+            		    notification.getQuantity(),
+            		    notification.getPrice(),
+            		    notification.getPaymentMethod(),
+            		    notification.getAddress()
+            		);
+            		sendEmail(notification.getEmail(), "Order Confirmation", emailBody);
                 logger.info("✅ Email sent successfully to {}", notification.getEmail());
 
                 // Mark as sent
