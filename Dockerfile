@@ -10,7 +10,7 @@ COPY . .
 # Now go offline successfully (all modules exist now)
 RUN mvn dependency:go-offline -B
 
-RUN mvn clean package -pl NotificationService -am -DskipTests
+RUN mvn clean package -DskipTests
 
 # ===================== Stage 2: Run the application =====================
 FROM eclipse-temurin:17-jre-alpine
